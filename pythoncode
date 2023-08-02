@@ -1,0 +1,46 @@
+from elasticsearch import Elasticsearch
+
+# Create an Elasticsearch client
+es = Elasticsearch(['localhost:9200'])
+
+# Define the search query
+query = {
+    "query": {
+        "match": {
+            "title": "elasticsearch"
+        }
+    },
+    "aggs": {
+        "top_tags": {
+            "terms": {
+                "field": "tags.keyword",
+                "size": 10
+            }
+        }
+    },
+    "sort": [
+        {
+            "date": {
+                "order": "desc"
+            }
+        }
+    ],
+    "size": 10,
+    "from": 0
+}
+
+# Execute the search query
+response = es.search(index="blog_posts", body=query)
+
+# Extract and print search results
+for hit in response['hits']['hits']:
+    print(f"Title: {hit['_source']['title']}")
+    print(f"Author: {hit['_source']['author']}")
+    print(f"Date: {hit['_source']['date']}")
+    print(f"Tags: {', '.join(hit['_source']['tags'])}")
+    print("")
+
+# Extract and print aggregation results
+print("Top Tags:")
+for tag in response['aggregations']['top_tags']['buckets']:
+    print(f"{tag['key']}: {tag['doc_count']} posts")
